@@ -81,6 +81,7 @@ export default function PaymentsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [form, setForm] = useState({ amountUsd: '', description: '', customerEmail: '', expiryMinutes: '30' });
@@ -92,11 +93,12 @@ export default function PaymentsPage() {
     setLoading(true);
     setError('');
     try {
+      setError('');
       const { data } = await paymentsApi.list(p, 20);
       setPayments(data.payments);
       setTotal(data.total);
     } catch (err) {
-      setError(getErrorMessage(err) ?? "Couldn't load payments.");
+      setError(getErrorMessage(err) || "Couldn't load payments.");
     } finally {
       setLoading(false);
     }

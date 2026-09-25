@@ -83,6 +83,7 @@ describe('PaymentsPage', () => {
   });
 
   it('submits the create-payment form with parsed numeric fields', async () => {
+    const user = userEvent.setup();
     const createdPayment = { ...basePayment, id: 'pay-new', reference: 'REF-NEW', amountUsd: 12.5 };
     vi.mocked(paymentsApi.create).mockResolvedValue({
       data: createdPayment,
@@ -90,7 +91,7 @@ describe('PaymentsPage', () => {
 
     render(<PaymentsPage />);
 
-    await userEvent.click(screen.getByTestId('new-payment-button'));
+    await user.click(screen.getByTestId('new-payment-button'));
 
     const modal = await screen.findByTestId('create-payment-modal');
     const fields = within(modal);
@@ -99,7 +100,7 @@ describe('PaymentsPage', () => {
     fireEvent.change(fields.getByLabelText('Description (optional)'), { target: { value: 'Test invoice' } });
     fireEvent.change(fields.getByLabelText('Customer Email (optional)'), { target: { value: 'buyer@example.com' } });
     fireEvent.change(fields.getByLabelText('Expires in (minutes)'), { target: { value: '60' } });
-    await userEvent.click(fields.getByTestId('create-payment-submit'));
+    await user.click(fields.getByTestId('create-payment-submit'));
 
     await waitFor(() => {
       expect(paymentsApi.create).toHaveBeenCalledWith({
@@ -112,6 +113,7 @@ describe('PaymentsPage', () => {
   });
 
   it('clears the form and shows the QR modal after a successful create', async () => {
+    const user = userEvent.setup();
     const createdPayment = { ...basePayment, id: 'pay-new', reference: 'REF-NEW' };
     vi.mocked(paymentsApi.create).mockResolvedValue({
       data: createdPayment,
@@ -119,13 +121,13 @@ describe('PaymentsPage', () => {
 
     render(<PaymentsPage />);
 
-    await userEvent.click(screen.getByTestId('new-payment-button'));
+    await user.click(screen.getByTestId('new-payment-button'));
 
     const modal = await screen.findByTestId('create-payment-modal');
     const fields = within(modal);
 
-    fireEvent.change(fields.getByLabelText('Amount (USD)'), { target: { value: '10' } });
-    await userEvent.click(fields.getByTestId('create-payment-submit'));
+    await user.type(fields.getByLabelText('Amount (USD)'), '10');
+    await user.click(fields.getByTestId('create-payment-submit'));
 
     await waitFor(() => {
       expect(screen.queryByTestId('create-payment-modal')).not.toBeInTheDocument();
@@ -135,18 +137,19 @@ describe('PaymentsPage', () => {
     expect(within(qrModal).getByText('REF-NEW')).toBeInTheDocument();
     expect(within(qrModal).getByTestId('qr-code')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByTestId('new-payment-button'));
+    await user.click(screen.getByTestId('new-payment-button'));
     const reopenedModal = await screen.findByTestId('create-payment-modal');
-    expect(within(reopenedModal).getByLabelText('Amount (USD)')).toHaveValue(null);
+    expect((within(reopenedModal).getByLabelText('Amount (USD)') as HTMLInputElement).value).toBe('');
   });
 
-  it('renders an error message and avoids false empty state when paymentsApi.list rejects', async () => {
-    vi.mocked(paymentsApi.list).mockRejectedValue(new Error('Network error'));
+  it('renders an error banner when paymentsApi.list rejects', async () => {
+    vi.mocked(paymentsApi.list).mockRejectedValueOnce(new Error('Network error loading payments'));
 
     render(<PaymentsPage />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('payments-error')).toHaveTextContent('Network error');
+      expect(screen.getByTestId('payments-error')).toBeInTheDocument();
+      expect(screen.getByTestId('payments-error')).toHaveTextContent('Network error loading payments');
     });
 
     expect(screen.queryByText('No payments yet')).not.toBeInTheDocument();
@@ -158,7 +161,21 @@ describe('PaymentsPage', () => {
     render(<PaymentsPage />);
 
     await waitFor(() => {
+      expect(screen.getByTestId('payments-error')).toBeInTheDocument();
+      expect(screen.getByTestId('payments-error')).toHaveTextContent('Network error loading payments');
+    });
+    expect(screen.queryByText('No payments yet')).not.toBeInTheDocument();
+  });
+
+  it('renders fallback error message when error has no specific message', async () => {
+    vi.mocked(paymentsApi.list).mockRejectedValueOnce({});
+
+    render(<PaymentsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('payments-error')).toBeInTheDocument();
       expect(screen.getByTestId('payments-error')).toHaveTextContent("Couldn't load payments.");
     });
+    expect(screen.queryByText('No payments yet')).not.toBeInTheDocument();
   });
 });
