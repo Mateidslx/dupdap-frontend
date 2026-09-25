@@ -25,6 +25,7 @@ describe('Axios 401 response interceptor', () => {
   let responseErrorHandler: ((err: { response?: { status: number } }) => Promise<never>) | undefined;
 
   beforeAll(async () => {
+    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3000/api/v1';
     await import('./api');
 
     const instance = vi.mocked(axios.create).mock.results[0]?.value;
@@ -40,7 +41,12 @@ describe('Axios 401 response interceptor', () => {
 
     // Mock window.location
     Object.defineProperty(window, 'location', {
-      value: { href: '' },
+      value: {
+        href: '',
+        pathname: '/dashboard',
+        search: '',
+        assign: vi.fn(),
+      },
       writable: true,
       configurable: true,
     });
@@ -64,12 +70,24 @@ describe('Axios 401 response interceptor', () => {
     expect(localStorage.getItem('access_token')).toBeNull();
   });
 
-  it('redirects to /auth/login on a 401 response', async () => {
+  it('redirects to /auth/login with return path on a 401 response', async () => {
     const err = { response: { status: 401 } };
 
     await expect(responseErrorHandler?.(err)).rejects.toEqual(err);
 
-    expect(window.location.href).toBe('/auth/login');
+    expect(window.location.assign).toHaveBeenCalledWith('/auth/login?next=%2Fdashboard');
+  });
+
+  it('invokes registered auth redirect handler when present on 401', async () => {
+    const { setAuthRedirectHandler } = await import('./auth-redirect');
+    const mockHandler = vi.fn();
+    setAuthRedirectHandler(mockHandler);
+
+    const err = { response: { status: 401 } };
+    await expect(responseErrorHandler?.(err)).rejects.toEqual(err);
+
+    expect(mockHandler).toHaveBeenCalledWith('/dashboard');
+    setAuthRedirectHandler(null);
   });
 
   it('does not clear auth state on a non-401 error (e.g. 403)', async () => {
@@ -81,12 +99,10 @@ describe('Axios 401 response interceptor', () => {
   });
 
   it('does not redirect on a non-401 error (e.g. 500)', async () => {
-    window.location.href = '/dashboard';
-
     const err = { response: { status: 500 } };
     await expect(responseErrorHandler?.(err)).rejects.toEqual(err);
 
-    expect(window.location.href).toBe('/dashboard');
+    expect(window.location.assign).not.toHaveBeenCalled();
   });
 
   it('passes through the original error on rejection for 401', async () => {
