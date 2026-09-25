@@ -21,6 +21,14 @@ vi.mock('axios', () => {
   };
 });
 
+vi.mock('./auth-redirect', () => ({
+  redirectToLogin: vi.fn(),
+}));
+
+vi.mock('./env', () => ({
+  getApiUrl: vi.fn(() => 'http://localhost:3000/api/v1'),
+}));
+
 describe('Axios 401 response interceptor', () => {
   let responseErrorHandler: ((err: { response?: { status: number } }) => Promise<never>) | undefined;
 
@@ -64,12 +72,15 @@ describe('Axios 401 response interceptor', () => {
     expect(localStorage.getItem('access_token')).toBeNull();
   });
 
-  it('redirects to /auth/login on a 401 response', async () => {
-    const err = { response: { status: 401 } };
+  it('calls redirectToLogin() with the current path preserved on a 401 response', async () => {
+    const { redirectToLogin } = await import('./auth-redirect');
+    vi.mocked(redirectToLogin).mockClear();
 
+    const err = { response: { status: 401 } };
     await expect(responseErrorHandler?.(err)).rejects.toEqual(err);
 
-    expect(window.location.href).toBe('/auth/login');
+    expect(redirectToLogin).toHaveBeenCalled();
+    expect(window.location.href).not.toBe('/auth/login');
   });
 
   it('does not clear auth state on a non-401 error (e.g. 403)', async () => {
