@@ -184,15 +184,22 @@ export default function WebhooksPage() {
   };
 
   const toggleEvent = (e: string) => {
-    setForm((f) => ({
-      ...f,
-      events: f.events.includes(e) ? f.events.filter((x) => x !== e) : [...f.events, e],
-    }));
+    setForm((f) => {
+      const nextEvents = f.events.includes(e) ? f.events.filter((x) => x !== e) : [...f.events, e];
+      if (nextEvents.length > 0) {
+        setFormError('');
+      }
+      return {
+        ...f,
+        events: nextEvents,
+      };
+    });
   };
 
   const closeCreateModal = () => {
     setShowCreate(false);
     setForm({ url: '', events: [], secret: '' });
+    setFormError('');
   };
 
   const updateWebhookSecret = (id: string, secret: string) => {
@@ -264,6 +271,15 @@ export default function WebhooksPage() {
                   );
                 })}
               </div>
+              {formError && (
+                <p
+                  data-testid="webhook-events-error"
+                  role="alert"
+                  className="text-xs text-red-500 mt-2"
+                >
+                  {formError}
+                </p>
+              )}
             </div>
             <button data-testid="webhook-submit-button" type="submit" disabled={creating} className="btn-primary w-full">
               {creating ? 'Creating...' : 'Create Webhook'}
