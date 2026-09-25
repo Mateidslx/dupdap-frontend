@@ -112,7 +112,10 @@ export default function PayPage({ params }: { params: { paymentId: string } }) {
     );
   }
 
-  const stellarUri = `web+stellar:pay?destination=${encodeURIComponent(payment.stellarDepositAddress ?? '')}&amount=${encodeURIComponent(String(payment.amountXlm ?? payment.amountUsd))}&memo=${encodeURIComponent(payment.stellarMemo)}&memo_type=text`;
+  const hasCryptoAmount = payment.amountXlm != null && payment.amountXlm > 0;
+  const stellarUri = hasCryptoAmount
+    ? `web+stellar:pay?destination=${encodeURIComponent(payment.stellarDepositAddress ?? '')}&amount=${encodeURIComponent(String(payment.amountXlm))}&memo=${encodeURIComponent(payment.stellarMemo)}&memo_type=text`
+    : null;
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -136,13 +139,23 @@ export default function PayPage({ params }: { params: { paymentId: string } }) {
               )}
 
               <div className="flex justify-center mb-4">
-                <div
-                  className="bg-white p-3 rounded-xl border border-gray-200"
-                  role="img"
-                  aria-label={`Stellar payment QR code for ${formatUsd(payment.amountUsd)}`}
-                >
-                  <QRCodeSVG value={stellarUri} size={160} />
-                </div>
+                {stellarUri ? (
+                  <div
+                    className="bg-white p-3 rounded-xl border border-gray-200"
+                    role="img"
+                    aria-label={`Stellar payment QR code for ${formatUsd(payment.amountUsd)}`}
+                  >
+                    <QRCodeSVG value={stellarUri} size={160} />
+                  </div>
+                ) : (
+                  <div
+                    data-testid="crypto-amount-pending"
+                    className="bg-white p-6 rounded-xl border border-gray-200 flex flex-col items-center justify-center text-center space-y-2 w-44 h-44"
+                  >
+                    <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
+                    <p className="text-xs text-gray-500">Calculating crypto exchange rate…</p>
+                  </div>
+                )}
               </div>
               <p className="text-center text-xs text-gray-500 mb-4">
                 Scan with a Stellar wallet app, then approve USDC before deposit
