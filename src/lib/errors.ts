@@ -9,3 +9,11 @@ export function getErrorMessage(err: unknown): string | undefined {
   if (err instanceof Error && err.message) return err.message;
   return undefined;
 }
+
+/**
+ * Type guard narrowing an unknown thrown value to an AxiosError so callers can
+ * safely access Axios-specific properties like `response` and `response.status`.
+ */
+export function isAxiosError(err: unknown): err is AxiosError {
+  return err instanceof AxiosError;
+}
