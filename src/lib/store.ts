@@ -44,6 +44,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'dupdub-auth',
+      partialize: (state) => ({ token: state.token, merchant: state.merchant }),
       onRehydrateStorage: () => (state) => {
         clearLegacyAccessTokenKey();
         if (state) {
