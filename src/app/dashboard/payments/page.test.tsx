@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, within, cleanup, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PaymentsPage from './page';
 import { paymentsApi } from '@/lib/api';
@@ -44,6 +44,10 @@ describe('PaymentsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockListResponse([], 0);
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it('disables Prev on page 1', async () => {
@@ -91,11 +95,10 @@ describe('PaymentsPage', () => {
     const modal = await screen.findByTestId('create-payment-modal');
     const fields = within(modal);
 
-    await userEvent.type(fields.getByLabelText('Amount (USD)'), '12.50');
-    await userEvent.type(fields.getByLabelText('Description (optional)'), 'Test invoice');
-    await userEvent.type(fields.getByLabelText('Customer Email (optional)'), 'buyer@example.com');
-    await userEvent.clear(fields.getByLabelText('Expires in (minutes)'));
-    await userEvent.type(fields.getByLabelText('Expires in (minutes)'), '60');
+    fireEvent.change(fields.getByLabelText('Amount (USD)'), { target: { value: '12.50' } });
+    fireEvent.change(fields.getByLabelText('Description (optional)'), { target: { value: 'Test invoice' } });
+    fireEvent.change(fields.getByLabelText('Customer Email (optional)'), { target: { value: 'buyer@example.com' } });
+    fireEvent.change(fields.getByLabelText('Expires in (minutes)'), { target: { value: '60' } });
     await userEvent.click(fields.getByTestId('create-payment-submit'));
 
     await waitFor(() => {
@@ -121,7 +124,7 @@ describe('PaymentsPage', () => {
     const modal = await screen.findByTestId('create-payment-modal');
     const fields = within(modal);
 
-    await userEvent.type(fields.getByLabelText('Amount (USD)'), '10');
+    fireEvent.change(fields.getByLabelText('Amount (USD)'), { target: { value: '10' } });
     await userEvent.click(fields.getByTestId('create-payment-submit'));
 
     await waitFor(() => {
@@ -134,6 +137,28 @@ describe('PaymentsPage', () => {
 
     await userEvent.click(screen.getByTestId('new-payment-button'));
     const reopenedModal = await screen.findByTestId('create-payment-modal');
-    expect(within(reopenedModal).getByLabelText('Amount (USD)')).toHaveValue('');
+    expect(within(reopenedModal).getByLabelText('Amount (USD)')).toHaveValue(null);
+  });
+
+  it('renders an error message and avoids false empty state when paymentsApi.list rejects', async () => {
+    vi.mocked(paymentsApi.list).mockRejectedValue(new Error('Network error'));
+
+    render(<PaymentsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('payments-error')).toHaveTextContent('Network error');
+    });
+
+    expect(screen.queryByText('No payments yet')).not.toBeInTheDocument();
+  });
+
+  it('renders fallback error message when error object has no message property', async () => {
+    vi.mocked(paymentsApi.list).mockRejectedValue({});
+
+    render(<PaymentsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('payments-error')).toHaveTextContent("Couldn't load payments.");
+    });
   });
 });
