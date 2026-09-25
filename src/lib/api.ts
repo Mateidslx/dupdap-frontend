@@ -1,7 +1,8 @@
 import axios from 'axios';
-import { useAuthStore } from './store';
-import { redirectToLogin } from './auth-redirect';
 import { getApiUrl } from './env';
+import { useAuthStore } from './store';
+import { getApiUrl } from './env';
+import { redirectToLogin } from './auth-redirect';
 import type {
   AuthResponse,
   Merchant,
