@@ -1,6 +1,7 @@
 /**
  * Tests for /pay/[paymentId] polling timer logic
  * Issue: interval fires every 5s, cleared on unmount, cleared on terminal status
+ * Issue #310: 1s countdown timer must be isolated so it does not re-render the whole page
  * Issue #312: visibilitychange recomputes countdown and triggers immediate poll
  */
 import React from 'react';
@@ -168,6 +169,14 @@ describe('PayPage — polling timer logic', () => {
 
     // Flush initial fetch
     await act(async () => { await Promise.resolve(); });
+  it('triggers an immediate poll when the tab becomes visible again', async () => {
+    mockGetByReference.mockResolvedValue({ data: PENDING_PAYMENT } as ReturnType<typeof paymentsApi.getByReference>);
+
+    render(<PayPage params={defaultParams} />);
+
+    // Flush initial fetch
+    await act(async () => { await Promise.resolve(); });
+
     const afterMount = mockGetByReference.mock.calls.length; // 1
 
     // Tab goes to background, then comes back before the next 5s tick
@@ -196,5 +205,6 @@ describe('PayPage — polling timer logic', () => {
     });
 
     expect(mockGetByReference.mock.calls.length).toBe(afterMount);
+
   });
 });
