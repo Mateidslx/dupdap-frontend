@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Plus, Trash2, Copy, Check, Eye, EyeOff, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { webhooksApi } from '@/lib/api';
@@ -264,7 +264,7 @@ export default function WebhooksPage() {
                   );
                 })}
               </div>
-            </fieldset>
+            </div>
             <button data-testid="webhook-submit-button" type="submit" disabled={creating} className="btn-primary w-full">
               {creating ? 'Creating...' : 'Create Webhook'}
             </button>
