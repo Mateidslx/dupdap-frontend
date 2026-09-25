@@ -26,6 +26,8 @@ The customer-facing payment flow here is built around Stellar, not a generic mul
 /waitlist               public waitlist signup
 /auth/login             merchant login
 /auth/register          merchant registration
+/auth/forgot-password   request password reset link
+/auth/reset-password    set new password with token
 /pay/[paymentId]        customer-facing payment page (approve → deposit → status → receipt)
 /dashboard              merchant dashboard shell (layout.tsx wraps the routes below)
   /dashboard            overview
