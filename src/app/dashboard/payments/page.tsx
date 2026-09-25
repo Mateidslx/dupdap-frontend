@@ -10,11 +10,10 @@ import { FormField } from '@/components/FormField';
 import Modal from '@/components/Modal';
 import { SkeletonList } from '@/components/Skeleton';
 import { getErrorMessage } from '@/lib/errors';
-import Modal from '@/components/Modal';
-import { SkeletonList } from '@/components/Skeleton';
 import type { Payment } from '@/lib/types';
 
 const PAYMENT_TABLE_COLUMNS = 5;
+const MAX_DESCRIPTION_LENGTH = 255;
 
 // ---------------------------------------------------------------------------
 // Memoized row components — re-render only when the payment data or the
@@ -179,6 +178,8 @@ export default function PaymentsPage() {
               label="Description (optional)"
               type="text"
               required={false}
+              maxLength={MAX_DESCRIPTION_LENGTH}
+              hint={<span data-testid="description-char-counter">{form.description.length}/{MAX_DESCRIPTION_LENGTH}</span>}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />

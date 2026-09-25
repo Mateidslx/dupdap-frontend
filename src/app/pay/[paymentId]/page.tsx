@@ -120,7 +120,7 @@ export default function PayPage({ params }: { params: { paymentId: string } }) {
         <div className="p-4 xs:p-6 border-b border-gray-100 text-center">
           <p className="text-sm text-gray-500 font-medium">DupDub</p>
           <h1 className="text-3xl font-bold mt-1">{formatUsd(payment.amountUsd)}</h1>
-          {payment.description && <p className="text-sm text-gray-500 mt-1">{payment.description}</p>}
+          {payment.description && <p className="text-sm text-gray-500 mt-1 break-words">{payment.description}</p>}
         </div>
 
         <div className="p-4 xs:p-6">
