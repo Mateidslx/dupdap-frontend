@@ -17,3 +17,21 @@ export function getErrorMessage(err: unknown): string | undefined {
 export function isAxiosError(err: unknown): err is AxiosError {
   return err instanceof AxiosError;
 }
+
+/** Number of failed login attempts before a CAPTCHA challenge is shown. */
+export const CAPTCHA_THRESHOLD = 3;
+
+/**
+ * Build a user-facing message for rate-limit (HTTP 429) responses.
+ * Returns undefined when the error is not a rate-limit error.
+ */
+export function getRateLimitMessage(err: unknown): string | undefined {
+  if (err instanceof AxiosError && err.response?.status === 429) {
+    const retryAfter = err.response.headers?.['retry-after'];
+    if (retryAfter) {
+      return `Too many attempts. Please try again in ${retryAfter} seconds.`;
+    }
+    return 'Too many attempts. Please try again later.';
+  }
+  return undefined;
+}
