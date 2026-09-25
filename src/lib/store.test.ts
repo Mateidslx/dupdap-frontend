@@ -74,16 +74,30 @@ describe('useAuthStore', () => {
   });
 
   describe('persist middleware', () => {
-    it('state survives a simulated reload via the persist middleware', () => {
+    it('persists state to localStorage upon setAuth', () => {
       useAuthStore.getState().setAuth('survive-token', testMerchant);
-
-      // Reset the in-memory state to defaults
-      useAuthStore.setState({ token: null, merchant: null });
 
       // Read back from localStorage to verify persistence
       const stored = JSON.parse(localStorage.getItem('dupdub-auth') ?? '{}');
       expect(stored.state.token).toBe('survive-token');
       expect(stored.state.merchant).toEqual(testMerchant);
+    });
+
+    it('sets hasHydrated to true upon rehydration', async () => {
+      useAuthStore.setState({ hasHydrated: false });
+      expect(useAuthStore.getState().hasHydrated).toBe(false);
+
+      await useAuthStore.persist.rehydrate();
+      expect(useAuthStore.getState().hasHydrated).toBe(true);
+    });
+
+    it('sets hasHydrated to true even when storage is empty (first visit)', async () => {
+      localStorage.clear();
+      useAuthStore.setState({ hasHydrated: false });
+      expect(useAuthStore.getState().hasHydrated).toBe(false);
+
+      await useAuthStore.persist.rehydrate();
+      expect(useAuthStore.getState().hasHydrated).toBe(true);
     });
   });
 

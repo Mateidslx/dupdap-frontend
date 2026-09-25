@@ -42,6 +42,16 @@ export const useAuthStore = create<AuthState>()(
       },
       _setHasHydrated: (value) => set({ hasHydrated: value }),
     }),
-    { name: 'dupdub-auth', onRehydrateStorage: () => () => clearLegacyAccessTokenKey() },
+    {
+      name: 'dupdub-auth',
+      onRehydrateStorage: () => (state) => {
+        clearLegacyAccessTokenKey();
+        if (state) {
+          state._setHasHydrated(true);
+        } else {
+          useAuthStore.getState()._setHasHydrated(true);
+        }
+      },
+    },
   ),
 );
