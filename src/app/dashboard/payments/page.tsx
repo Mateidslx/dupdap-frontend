@@ -10,8 +10,6 @@ import { FormField } from '@/components/FormField';
 import Modal from '@/components/Modal';
 import { SkeletonList } from '@/components/Skeleton';
 import { getErrorMessage } from '@/lib/errors';
-import Modal from '@/components/Modal';
-import { SkeletonList } from '@/components/Skeleton';
 import type { Payment } from '@/lib/types';
 
 const PAYMENT_TABLE_COLUMNS = 5;
@@ -83,6 +81,7 @@ export default function PaymentsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [form, setForm] = useState({ amountUsd: '', description: '', customerEmail: '', expiryMinutes: '30' });
@@ -92,9 +91,12 @@ export default function PaymentsPage() {
   const load = async (p = 1) => {
     setLoading(true);
     try {
+      setError('');
       const { data } = await paymentsApi.list(p, 20);
       setPayments(data.payments);
       setTotal(data.total);
+    } catch (err) {
+      setError(getErrorMessage(err) || "Couldn't load payments.");
     } finally {
       setLoading(false);
     }
@@ -233,10 +235,11 @@ export default function PaymentsPage() {
       </Modal>
 
       <div className="card">
+        {error ? <div data-testid="payments-error" className="px-6 py-4 text-sm text-red-500">{error}</div> : null}
         <div className="md:hidden divide-y divide-gray-50">
           {loading ? (
             <SkeletonList rows={6} />
-          ) : payments.length === 0 ? (
+          ) : error ? null : payments.length === 0 ? (
             <div className="px-6 py-8 text-center text-gray-400 text-sm">No payments yet</div>
           ) : (
             payments.map((p) => (
@@ -273,7 +276,7 @@ export default function PaymentsPage() {
             <tbody className="divide-y divide-gray-50">
               {loading ? (
                 <tr><td colSpan={PAYMENT_TABLE_COLUMNS} className="px-6 py-8 text-center text-gray-400">Loading...</td></tr>
-              ) : payments.length === 0 ? (
+              ) : error ? null : payments.length === 0 ? (
                 <tr><td colSpan={PAYMENT_TABLE_COLUMNS} className="px-6 py-8 text-center text-gray-400">No payments yet</td></tr>
               ) : (
                 payments.map((p) => (
